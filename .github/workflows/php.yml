@@ -6,6 +6,7 @@ jobs:
   safe-writer:
     runs-on: ${{ matrix.operating-system }}
     strategy:
+      fail-fast: false
       max-parallel: 15
       matrix:
         operating-system: [ubuntu-latest, windows-latest, macOS-latest]
