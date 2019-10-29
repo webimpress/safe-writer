@@ -19,6 +19,7 @@ jobs:
         uses: shivammathur/setup-php@master
         with:
           php-version: ${{ matrix.php-versions }}
+          extension-csv: mbstring, xml
 
       - name: Install dependencies
         run: composer update --no-progress --no-suggest --prefer-dist --optimize-autoloader
