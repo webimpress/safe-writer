@@ -30,6 +30,8 @@ class FileWriterTest extends TestCase
     }
 
     /**
+     * @requires OS Darwin|Linux
+     *
      * @dataProvider permission
      *
      * @param int $chmod
