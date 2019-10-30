@@ -5,8 +5,10 @@ namespace WebimpressTest\SafeWriter;
 use PHPUnit\Framework\TestCase;
 use Webimpress\SafeWriter\FileWriter;
 
+use function file_exists;
 use function file_get_contents;
 use function fileperms;
+use function proc_close;
 use function sys_get_temp_dir;
 use function uniqid;
 
@@ -65,5 +67,50 @@ class FileWriterTest extends TestCase
     private function getTargetFile()
     {
         return sys_get_temp_dir() . '/' . uniqid('test_', true) . '.php';
+    }
+
+    public function testMultipleWriters()
+    {
+        $processes = [];
+        $descriptorSpec = [
+            0 => ['pipe', 'r'],
+            1 => ['pipe', 'w'],
+            2 => ['pipe', 'w'],
+        ];
+
+        for ($i = 0; $i < 20; ++$i) {
+            $processes[$i]['pipes'] = [];
+            $processes[$i]['process'] = proc_open(
+                'php ' . __DIR__ . '/writer.php',
+                $descriptorSpec,
+                $processes[$i]['pipes']
+            );
+        }
+
+        for ($i = 20; $i < 80; ++$i) {
+            $processes[$i]['pipes'] = [];
+            $processes[$i]['process'] = proc_open(
+                'php ' . __DIR__ . '/reader.php',
+                $descriptorSpec,
+                $processes[$i]['pipes']
+            );
+        }
+
+        foreach ($processes as $i => $process) {
+            if (is_resource($process['process'])) {
+                self::assertSame(0, proc_close($process['process']));
+            } else {
+                self::fail(sprintf('Process %d is not a resource', $i));
+            }
+        }
+    }
+
+    protected function tearDown()
+    {
+        if (file_exists(__DIR__ . '/test.php')) {
+            unlink(__DIR__ . '/test.php');
+        }
+
+        parent::tearDown();
     }
 }
