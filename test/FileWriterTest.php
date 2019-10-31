@@ -140,7 +140,7 @@ class FileWriterTest extends TestCase
         if ($expectedResult) {
             self::assertNotEmpty($readerResult);
             self::assertTrue(is_numeric($readerResult));
-            self::assertGreaterThan(500, $readerResult);
+            self::assertGreaterThan(0, $readerResult);
         }
     }
 
