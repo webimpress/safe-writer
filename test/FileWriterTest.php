@@ -8,9 +8,14 @@ use Webimpress\SafeWriter\FileWriter;
 use function file_exists;
 use function file_get_contents;
 use function fileperms;
+use function is_numeric;
 use function proc_close;
+use function proc_open;
+use function stream_get_contents;
 use function sys_get_temp_dir;
 use function uniqid;
+
+use const PHP_EOL;
 
 class FileWriterTest extends TestCase
 {
@@ -69,7 +74,20 @@ class FileWriterTest extends TestCase
         return sys_get_temp_dir() . '/' . uniqid('test_', true) . '.php';
     }
 
-    public function testMultipleWriters()
+    public function writer()
+    {
+        //                         writer script                   expected result
+        yield 'safe-writer'     => [__DIR__ . '/safe-writer.php',     true];
+        yield 'standard-writer' => [__DIR__ . '/standard-writer.php', false];
+    }
+
+    /**
+     * @dataProvider writer
+     *
+     * @param string $writer
+     * @param bool $expectedResult
+     */
+    public function testMultipleWriters($writer, $expectedResult)
     {
         $processes = [];
         $descriptorSpec = [
@@ -78,30 +96,51 @@ class FileWriterTest extends TestCase
             2 => ['pipe', 'w'],
         ];
 
-        for ($i = 0; $i < 20; ++$i) {
+        $processes[0]['pipes'] = [];
+        $processes[0]['process'] = proc_open(
+            'php ' . __DIR__ . '/reader.php',
+            $descriptorSpec,
+            $processes[0]['pipes']
+        );
+
+        for ($i = 1; $i <= 20; ++$i) {
             $processes[$i]['pipes'] = [];
             $processes[$i]['process'] = proc_open(
-                'php ' . __DIR__ . '/writer.php',
+                'php ' . $writer,
                 $descriptorSpec,
                 $processes[$i]['pipes']
             );
         }
 
-        for ($i = 20; $i < 80; ++$i) {
-            $processes[$i]['pipes'] = [];
-            $processes[$i]['process'] = proc_open(
-                'php ' . __DIR__ . '/reader.php',
-                $descriptorSpec,
-                $processes[$i]['pipes']
-            );
-        }
-
+        $readerResult = null;
+        $readerErrors = null;
+        $results = [];
         foreach ($processes as $i => $process) {
             if (is_resource($process['process'])) {
-                self::assertSame(0, proc_close($process['process']));
+                if ($i === 0) {
+                    $readerResult = stream_get_contents($process['pipes'][1]);
+                    $readerErrors = stream_get_contents($process['pipes'][2]);
+                }
+
+                $code = proc_close($process['process']);
+                if ($code !== 0) {
+                    $results[$i] = $code;
+                }
             } else {
                 self::fail(sprintf('Process %d is not a resource', $i));
             }
+        }
+
+        self::assertSame(
+            $expectedResult,
+            empty($results),
+            'Response codes: ' . json_encode($results) . PHP_EOL
+            . 'Reader errors: ' . $readerErrors
+        );
+        if ($expectedResult) {
+            self::assertNotEmpty($readerResult);
+            self::assertTrue(is_numeric($readerResult));
+            self::assertGreaterThan(1000, $readerResult);
         }
     }
 
