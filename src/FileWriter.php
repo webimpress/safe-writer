@@ -2,6 +2,9 @@
 
 namespace Webimpress\SafeWriter;
 
+use function chmod;
+use function is_writable;
+use function md5;
 use function sys_get_temp_dir;
 use function umask;
 use function tempnam;
@@ -28,7 +31,11 @@ final class FileWriter
             throw Exception\ChmodException::unableToChangeChmod($tmp);
         }
 
-        if (rename($tmp, $file) === false) {
+        while (@rename($tmp, $file) === false) {
+            if (is_writable($file)) {
+                continue;
+            }
+
             throw Exception\RenameException::unableToMoveFile($tmp, $file);
         }
     }
