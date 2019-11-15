@@ -6,7 +6,6 @@ use function chmod;
 use function dirname;
 use function file_put_contents;
 use function is_writable;
-use function md5;
 use function rename;
 use function stripos;
 use function tempnam;
@@ -27,7 +26,7 @@ final class FileWriter
     public static function writeFile($file, $content, $chmod = 0666)
     {
         $dir = dirname($file);
-        $tmp = tempnam($dir, md5($file));
+        $tmp = tempnam($dir, $file);
 
         if (file_put_contents($tmp, $content) === false) {
             throw Exception\WriteContentException::unableToWriteContent($tmp);
