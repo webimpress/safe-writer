@@ -19,7 +19,7 @@ $ composer require webimpress/safe-writer
 ```php
 use Webimpress\SafeWriter\FileWriter;
 
-$targetFile = __DIR__ . '/file-name.txt';
+$targetFile = __DIR__ . '/target-file.php';
 $content = "<?php\nreturn " . var_export($data, true) . ';';
 
 FileWriter::writeFile($targetFile, $content);
