@@ -27,3 +27,6 @@ jobs:
 
       - name: Run tests
         run: composer test
+
+      - name: CS Checks
+        run: composer cs-check
