@@ -9,7 +9,7 @@ jobs:
       fail-fast: false
       max-parallel: 15
       matrix:
-        operating-system: [ubuntu-latest, macOS-latest]
+        operating-system: [macOS-latest]
         php-versions: ['5.6', '7.0', '7.1', '7.2', '7.3', '7.4']
     name: PHP ${{ matrix.php-versions }} on ${{ matrix.operating-system }}
     steps:
@@ -27,6 +27,3 @@ jobs:
 
       - name: Run tests
         run: composer test
-
-      - name: CS Checks
-        run: composer cs-check
