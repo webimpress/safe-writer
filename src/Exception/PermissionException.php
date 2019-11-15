@@ -17,7 +17,7 @@ final class PermissionException extends RuntimeException implements ExceptionInt
         return new self(sprintf(
             'Could not create temporary file "%s": '
             . 'the destination is not writable',
-            $file,
+            $file
         ));
     }
 }
