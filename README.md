@@ -1,6 +1,6 @@
 # Webimpress Safe Writer
 
-[![Build Status](https://travis-ci.org/webimpress/safe-writer.svg?branch=master)](https://travis-ci.org/webimpress/safe-writer)
+[![Build Status](https://travis-ci.com/webimpress/safe-writer.svg?branch=master)](https://travis-ci.com/webimpress/safe-writer)
 [![Coverage Status](https://coveralls.io/repos/github/webimpress/safe-writer/badge.svg?branch=master)](https://coveralls.io/github/webimpress/safe-writer?branch=master)
 
 Write files safely to avoid race conditions when
