@@ -28,6 +28,10 @@ final class FileWriter
         $dir = dirname($file);
         $tmp = tempnam($dir, $file);
 
+        if ($tmp === false) {
+            throw Exception\PermissionException::unableToCreateTemporaryFile($tmp);
+        }
+
         if (file_put_contents($tmp, $content) === false) {
             throw Exception\WriteContentException::unableToWriteContent($tmp);
         }
