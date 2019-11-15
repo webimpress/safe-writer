@@ -33,6 +33,7 @@ final class FileWriter
         }
 
         if (file_put_contents($tmp, $content) === false) {
+            unlink($tmp);
             throw Exception\WriteContentException::unableToWriteContent($tmp);
         }
 
