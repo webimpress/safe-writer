@@ -3,18 +3,18 @@
 namespace WebimpressTest\SafeWriter\Exception;
 
 use PHPUnit\Framework\TestCase;
-use Webimpress\SafeWriter\Exception\PermissionException;
+use Webimpress\SafeWriter\Exception\RuntimeException;
 
 use function uniqid;
 
-class PermissionExceptionTest extends TestCase
+class RuntimeExceptionTest extends TestCase
 {
     public function testException()
     {
         $file = uniqid('file_', true);
-        $exception = PermissionException::unableToCreateTemporaryFile($file);
+        $exception = RuntimeException::unableToCreateTemporaryFile($file);
 
-        self::assertInstanceOf(PermissionException::class, $exception);
+        self::assertInstanceOf(RuntimeException::class, $exception);
         self::assertContains($file, $exception->getMessage());
     }
 }
