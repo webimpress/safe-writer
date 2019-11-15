@@ -34,7 +34,7 @@ final class FileWriter
         }
 
         if (chmod($tmp, $chmod & ~umask()) === false) {
-            @unlink($tmp);
+            unlink($tmp);
             throw Exception\ChmodException::unableToChangeChmod($tmp);
         }
 
@@ -44,7 +44,7 @@ final class FileWriter
                 continue;
             }
 
-            @unlink($tmp);
+            unlink($tmp);
             throw Exception\RenameException::unableToMoveFile($tmp, $file);
         }
     }
