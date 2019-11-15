@@ -2,11 +2,9 @@
 
 namespace Webimpress\SafeWriter\Exception;
 
-use RuntimeException;
-
 use function sprintf;
 
-final class WriteContentException extends RuntimeException implements ExceptionInterface
+final class WriteContentException extends \RuntimeException implements ExceptionInterface
 {
     /**
      * @param string $file
@@ -14,9 +12,6 @@ final class WriteContentException extends RuntimeException implements ExceptionI
      */
     public static function unableToWriteContent($file)
     {
-        return new self(sprintf(
-            'Could not write content to the file "%s"',
-            $file
-        ));
+        return new self(sprintf('Could not write content to the file "%s"', $file));
     }
 }

@@ -2,11 +2,9 @@
 
 namespace Webimpress\SafeWriter\Exception;
 
-use RuntimeException;
-
 use function sprintf;
 
-final class ChmodException extends RuntimeException implements ExceptionInterface
+final class ChmodException extends \RuntimeException implements ExceptionInterface
 {
     /**
      * @param string $file
@@ -14,9 +12,6 @@ final class ChmodException extends RuntimeException implements ExceptionInterfac
      */
     public static function unableToChangeChmod($file)
     {
-        return new self(sprintf(
-            'Could not change chmod of the file "%s"',
-            $file
-        ));
+        return new self(sprintf('Could not change chmod of the file "%s"', $file));
     }
 }
