@@ -26,7 +26,7 @@ final class FileWriter
     public static function writeFile($file, $content, $chmod = 0666)
     {
         $dir = dirname($file);
-        $tmp = tempnam($dir, $file);
+        $tmp = tempnam($dir, 'wsw');
 
         if ($tmp === false) {
             throw Exception\PermissionException::unableToCreateTemporaryFile($tmp);
