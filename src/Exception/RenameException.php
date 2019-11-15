@@ -2,11 +2,9 @@
 
 namespace Webimpress\SafeWriter\Exception;
 
-use RuntimeException;
-
 use function sprintf;
 
-final class RenameException extends RuntimeException implements ExceptionInterface
+final class RenameException extends \RuntimeException implements ExceptionInterface
 {
     /**
      * @param string $source
