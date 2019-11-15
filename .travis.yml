@@ -10,7 +10,13 @@ env:
     - COVERAGE_DEPS="php-coveralls/php-coveralls"
 
 matrix:
+  fast_finish: true
   include:
+    - os: windows
+      language: sh
+      env:
+        - PHP_VERSION=7.3.11
+        - PHP_DIR=php73
     - php: 5.6
       env:
         - DEPS=lowest
@@ -40,6 +46,8 @@ matrix:
         - DEPS=lowest
     - php: 7.3
       env:
+        - TEST_COVERAGE=true
+        - CS_CHECK=true
         - DEPS=latest
     - php: 7.4snapshot
       env:
@@ -47,17 +55,33 @@ matrix:
     - php: 7.4snapshot
       env:
         - DEPS=latest
-  allow_failures:
-    - php: 7.4snapshot
 
 before_install:
-  - if [[ $TEST_COVERAGE != 'true' ]]; then phpenv config-rm xdebug.ini || return 0 ; fi
+  # Windows: Install PHP and setup PATH
+  - if [[ $TRAVIS_OS_NAME = 'windows' ]]; then choco install php --version $PHP_VERSION -y; fi
+  - if [[ $TRAVIS_OS_NAME = 'windows' ]]; then export PATH=/c/tools/$PHP_DIR:$PATH; fi
+
+  # Windows: Modify configuration
+  - if [[ $TRAVIS_OS_NAME = 'windows' ]]; then echo 'extension_dir="ext"' >> /c/tools/$PHP_DIR/php.ini; fi
+  - if [[ $TRAVIS_OS_NAME = 'windows' ]]; then echo "extension=php_openssl.dll" >> /c/tools/$PHP_DIR/php.ini; fi
+  - if [[ $TRAVIS_OS_NAME = 'windows' ]]; then echo "extension=php_mbstring.dll" >> /c/tools/$PHP_DIR/php.ini; fi
+
+  # Windows: Add Curl (if needed), download CA Bundle and update configuration
+  - if [[ $TRAVIS_OS_NAME = 'windows' ]]; then echo "extension=php_curl.dll" >> /c/tools/$PHP_DIR/php.ini; fi
+  - if [[ $TRAVIS_OS_NAME = 'windows' ]]; then travis_retry wget https://curl.haxx.se/ca/cacert.pem -O /c/tools/cacert.pem -q; fi
+  - if [[ $TRAVIS_OS_NAME = 'windows' ]]; then echo "curl.cainfo=C:\tools\cacert.pem" >> /c/tools/$PHP_DIR/php.ini; fi
+
+  # Windows: Install Composer and modify PATH
+  - if [[ $TRAVIS_OS_NAME = 'windows' ]]; then choco install composer -i; fi
+  - if [[ $TRAVIS_OS_NAME = 'windows' ]]; then export PATH=/c/ProgramData/ComposerSetup/bin:$PATH; fi
+
+  - if [[ $TEST_COVERAGE != 'true' && $TRAVIS_OS_NAME != 'windows' ]]; then phpenv config-rm xdebug.ini || return 0 ; fi
 
 install:
   - travis_retry composer update $COMPOSER_ARGS
   - if [[ $DEPS == 'lowest' ]]; then travis_retry composer update --prefer-lowest --prefer-stable $COMPOSER_ARGS ; fi
   - if [[ $TEST_COVERAGE == 'true' ]]; then travis_retry composer require --dev $COMPOSER_ARGS $COVERAGE_DEPS ; fi
-  - stty cols 120 && composer show
+  - if [[ $TRAVIS_OS_NAME == 'windows' ]]; then composer show ; else stty cols 120 && composer show ; fi
 
 script:
   - if [[ $TEST_COVERAGE == 'true' ]]; then composer test-coverage ; else composer test ; fi

@@ -2,11 +2,17 @@
 
 namespace Webimpress\SafeWriter;
 
-use function sys_get_temp_dir;
-use function umask;
-use function tempnam;
+use function chmod;
 use function file_put_contents;
+use function is_writable;
+use function md5;
 use function rename;
+use function stripos;
+use function sys_get_temp_dir;
+use function tempnam;
+use function umask;
+
+use const PHP_OS;
 
 final class FileWriter
 {
@@ -15,6 +21,7 @@ final class FileWriter
      * @param string $content
      * @param int $chmod
      * @return void
+     * @throws Exception\ExceptionInterface
      */
     public static function writeFile($file, $content, $chmod = 0666)
     {
@@ -28,7 +35,11 @@ final class FileWriter
             throw Exception\ChmodException::unableToChangeChmod($tmp);
         }
 
-        if (rename($tmp, $file) === false) {
+        while (@rename($tmp, $file) === false) {
+            if (is_writable($file) && stripos(PHP_OS, 'WIN') === 0) {
+                continue;
+            }
+
             throw Exception\RenameException::unableToMoveFile($tmp, $file);
         }
     }
