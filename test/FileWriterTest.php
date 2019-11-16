@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace WebimpressTest\SafeWriter;
 
+use Generator;
 use PHPUnit\Framework\TestCase;
 use Webimpress\SafeWriter\FileWriter;
 
@@ -9,17 +12,24 @@ use function file_exists;
 use function file_get_contents;
 use function fileperms;
 use function is_numeric;
+use function is_resource;
+use function json_encode;
+use function octdec;
 use function proc_close;
 use function proc_open;
+use function sprintf;
 use function stream_get_contents;
+use function substr;
 use function sys_get_temp_dir;
+use function umask;
 use function uniqid;
+use function unlink;
 
 use const PHP_EOL;
 
 class FileWriterTest extends TestCase
 {
-    public function testContentIsSavedToTheFile()
+    public function testContentIsSavedToTheFile() : void
     {
         $targetFile = $this->getTargetFile();
 
@@ -28,11 +38,11 @@ class FileWriterTest extends TestCase
         self::assertSame('some data', file_get_contents($targetFile));
     }
 
-    public function permission()
+    public function permission() : Generator
     {
         //    chmod  umask expected
         yield [0666, 022, 0644];
-        yield [0644, 0,   0644];
+        yield [0644, 0, 0644];
         yield [0600, 022, 0600];
     }
 
@@ -40,12 +50,8 @@ class FileWriterTest extends TestCase
      * @requires OS Darwin|Linux
      *
      * @dataProvider permission
-     *
-     * @param int $chmod
-     * @param int $umask
-     * @param int $expectedChmod
      */
-    public function testCorrectChmodIsSet($chmod, $umask, $expectedChmod)
+    public function testCorrectChmodIsSet(int $chmod, int $umask, int $expectedChmod) : void
     {
         $targetFile = $this->getTargetFile();
 
@@ -57,37 +63,27 @@ class FileWriterTest extends TestCase
         self::assertSame($expectedChmod, $this->getFilePermission($targetFile));
     }
 
-    /**
-     * @param string $file
-     * @return int
-     */
-    private function getFilePermission($file)
+    private function getFilePermission(string $file) : int
     {
         return octdec(substr(sprintf('%o', fileperms($file)), -4));
     }
 
-    /**
-     * @return string
-     */
-    private function getTargetFile()
+    private function getTargetFile() : string
     {
         return sys_get_temp_dir() . '/' . uniqid('test_', true) . '.php';
     }
 
-    public function writer()
+    public function writer() : Generator
     {
-        //                         writer script                   expected result
-        yield 'safe-writer'     => [__DIR__ . '/safe-writer.php',     true];
+        //                     writer script                   expected result
+        yield 'safe-writer' => [__DIR__ . '/safe-writer.php', true];
         yield 'standard-writer' => [__DIR__ . '/standard-writer.php', false];
     }
 
     /**
      * @dataProvider writer
-     *
-     * @param string $writer
-     * @param bool $expectedResult
      */
-    public function testMultipleWriters($writer, $expectedResult)
+    public function testMultipleWriters(string $writer, bool $expectedResult) : void
     {
         $processes = [];
         $descriptorSpec = [
@@ -144,7 +140,7 @@ class FileWriterTest extends TestCase
         }
     }
 
-    protected function tearDown()
+    protected function tearDown() : void
     {
         if (file_exists(__DIR__ . '/test.php')) {
             unlink(__DIR__ . '/test.php');

@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace WebimpressTest\SafeWriter;
 
+use Generator;
 use PHPUnit\Framework\TestCase;
 use Webimpress\SafeWriter\Exception\ExceptionInterface;
 
@@ -13,7 +16,7 @@ use function substr;
 
 class ExceptionTest extends TestCase
 {
-    public function exception()
+    public function exception() : Generator
     {
         $namespace = substr(ExceptionInterface::class, 0, strrpos(ExceptionInterface::class, '\\') + 1);
 
@@ -24,14 +27,13 @@ class ExceptionTest extends TestCase
             yield $class => [$namespace . $class];
         }
     }
+
     /**
      * @dataProvider exception
-     *
-     * @param string $exception
      */
-    public function testExceptionIsInstanceOfExceptionInterface($exception)
+    public function testExceptionIsInstanceOfExceptionInterface(string $exception) : void
     {
-        self::assertContains('Exception', $exception);
+        self::assertStringContainsString('Exception', $exception);
         self::assertTrue(is_a($exception, ExceptionInterface::class, true));
     }
 }

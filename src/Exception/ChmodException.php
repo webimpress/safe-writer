@@ -1,16 +1,16 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Webimpress\SafeWriter\Exception;
+
+use RuntimeException as PhpRuntimeException;
 
 use function sprintf;
 
-final class ChmodException extends \RuntimeException implements ExceptionInterface
+final class ChmodException extends PhpRuntimeException implements ExceptionInterface
 {
-    /**
-     * @param string $file
-     * @return self
-     */
-    public static function unableToChangeChmod($file)
+    public static function unableToChangeChmod(string $file) : self
     {
         return new self(sprintf('Could not change chmod of the file "%s"', $file));
     }

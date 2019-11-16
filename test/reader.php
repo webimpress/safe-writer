@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 $file = __DIR__ . '/test.php';
 
 $start = microtime(true);
