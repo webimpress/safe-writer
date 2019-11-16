@@ -7,11 +7,11 @@ use function sprintf;
 final class RuntimeException extends \RuntimeException implements ExceptionInterface
 {
     /**
-     * @param string $file
+     * @param string $dir
      * @return self
      */
-    public static function unableToCreateTemporaryFile($file)
+    public static function unableToCreateTemporaryFile($dir)
     {
-        return new self(sprintf('Could not create temporary file "%s"', $file));
+        return new self(sprintf('Could not create temporary file in directory "%s"', $dir));
     }
 }
