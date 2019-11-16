@@ -29,7 +29,7 @@ final class FileWriter
         $tmp = tempnam($dir, 'wsw');
 
         if ($tmp === false) {
-            throw Exception\RuntimeException::unableToCreateTemporaryFile($tmp);
+            throw Exception\RuntimeException::unableToCreateTemporaryFile($dir);
         }
 
         if (file_put_contents($tmp, $content) === false) {

@@ -11,10 +11,10 @@ class RuntimeExceptionTest extends TestCase
 {
     public function testException()
     {
-        $file = uniqid('file_', true);
-        $exception = RuntimeException::unableToCreateTemporaryFile($file);
+        $dir = uniqid('dir_', true);
+        $exception = RuntimeException::unableToCreateTemporaryFile($dir);
 
         self::assertInstanceOf(RuntimeException::class, $exception);
-        self::assertContains($file, $exception->getMessage());
+        self::assertContains($dir, $exception->getMessage());
     }
 }

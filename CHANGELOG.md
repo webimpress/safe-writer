@@ -22,7 +22,7 @@ All notable changes to this project will be documented in this file, in reverse 
 
 ### Fixed
 
-- Nothing.
+- [#4](https://github.com/webimpress/safe-writer/pull/4) fixes exception message when temporary file cannot be created.
 
 ## 1.0.0 - 2019-11-15
 
