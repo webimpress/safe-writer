@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace WebimpressTest\SafeWriter;
 
+use Error;
 use Generator;
 use PHPUnit\Framework\TestCase;
 use Webimpress\SafeWriter\Exception\ExceptionInterface;
 
 use function basename;
 use function glob;
+use function interface_exists;
 use function is_a;
 use function strrpos;
 use function substr;
@@ -35,5 +37,19 @@ class ExceptionTest extends TestCase
     {
         self::assertStringContainsString('Exception', $exception);
         self::assertTrue(is_a($exception, ExceptionInterface::class, true));
+    }
+
+    /**
+     * @dataProvider exception
+     */
+    public function testExceptionIsNotInstantiable(string $exception) : void
+    {
+        if (interface_exists($exception)) {
+            $this->markTestSkipped('Test does not apply to interface ' . $exception);
+        }
+
+        $this->expectException(Error::class);
+        $this->expectExceptionMessage('Call to private');
+        new $exception();
     }
 }
