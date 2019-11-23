@@ -17,12 +17,6 @@ matrix:
       env:
         - PHP_VERSION=7.3.11
         - PHP_DIR=php73
-    - php: 7.1
-      env:
-        - DEPS=lowest
-    - php: 7.1
-      env:
-        - DEPS=latest
     - php: 7.2
       env:
         - DEPS=lowest
