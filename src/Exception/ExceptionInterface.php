@@ -1,7 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Webimpress\SafeWriter\Exception;
 
-interface ExceptionInterface
+use Throwable;
+
+interface ExceptionInterface extends Throwable
 {
 }
