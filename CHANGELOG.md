@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file, in reverse chronological order by release.
 
-## 2.0.0 - TBD
+## 2.0.0 - 2019-11-27
 
 ### Added
 
@@ -22,28 +22,6 @@ All notable changes to this project will be documented in this file, in reverse 
 ### Removed
 
 - [#5](https://github.com/webimpress/safe-writer/pull/5) removes support for PHP versions prior to 7.2.
-
-### Fixed
-
-- Nothing.
-
-## 1.0.2 - TBD
-
-### Added
-
-- Nothing.
-
-### Changed
-
-- Nothing.
-
-### Deprecated
-
-- Nothing.
-
-### Removed
-
-- Nothing.
 
 ### Fixed
 
