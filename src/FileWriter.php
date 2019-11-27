@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Webimpress\SafeWriter;
 
 use function chmod;
@@ -17,13 +19,9 @@ use const PHP_OS;
 final class FileWriter
 {
     /**
-     * @param string $file
-     * @param string $content
-     * @param int $chmod
-     * @return void
      * @throws Exception\ExceptionInterface
      */
-    public static function writeFile($file, $content, $chmod = 0666)
+    public static function writeFile(string $file, string $content, int $chmod = 0666) : void
     {
         $dir = dirname($file);
         $tmp = tempnam($dir, 'wsw');
