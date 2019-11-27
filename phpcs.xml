@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0"?>
 <ruleset>
-    <rule ref="PSR12"/>
+    <rule ref="vendor/webimpress/coding-standard/ruleset.xml"/>
 
     <!-- Display progress -->
     <arg value="p"/>
