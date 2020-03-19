@@ -3,11 +3,16 @@
 namespace WebimpressTest\SafeWriter;
 
 use PHPUnit\Framework\TestCase;
+use Webimpress\SafeWriter\Exception\RuntimeException;
 use Webimpress\SafeWriter\FileWriter;
 
+use function basename;
+use function chmod;
+use function dirname;
 use function file_exists;
 use function file_get_contents;
 use function fileperms;
+use function is_dir;
 use function is_numeric;
 use function proc_close;
 use function proc_open;
@@ -144,10 +149,36 @@ class FileWriterTest extends TestCase
         }
     }
 
+    public function testUnwritableDirThrowsException()
+    {
+        $dir = sys_get_temp_dir() . '/unwritable';
+        mkdir($dir);
+        chmod($dir, 0400);
+        $this->expectException(RuntimeException::class);
+        try {
+            FileWriter::writeFile($dir . '/test', 'foo');
+        } finally {
+            chmod($dir, 0700);
+        }
+    }
+
+    public function testRelativeDirectorySaves()
+    {
+        $targetFile = $this->getTargetFile();
+        $targetFile = dirname($targetFile) . '/../' . basename(dirname($targetFile)) . '/' . basename($targetFile);
+
+        FileWriter::writeFile($targetFile, 'some data');
+
+        self::assertSame('some data', file_get_contents($targetFile));
+    }
+
     protected function tearDown()
     {
         if (file_exists(__DIR__ . '/test.php')) {
             unlink(__DIR__ . '/test.php');
+        }
+        if (is_dir(sys_get_temp_dir() . '/unwritable')) {
+            rmdir(sys_get_temp_dir() . '/unwritable');
         }
 
         parent::tearDown();
