@@ -16,6 +16,7 @@ use function is_dir;
 use function is_numeric;
 use function proc_close;
 use function proc_open;
+use function sprintf;
 use function stream_get_contents;
 use function sys_get_temp_dir;
 use function uniqid;
@@ -151,9 +152,10 @@ class FileWriterTest extends TestCase
 
     public function testUnwritableDirThrowsException()
     {
-        $dir = sys_get_temp_dir() . '/unwritable';
+        $dir = __DIR__ . '/unwritable';
         mkdir($dir);
-        chmod($dir, 0400);
+        chmod($dir, 0500);
+
         $this->expectException(RuntimeException::class);
         try {
             FileWriter::writeFile($dir . '/test', 'foo');
@@ -177,8 +179,8 @@ class FileWriterTest extends TestCase
         if (file_exists(__DIR__ . '/test.php')) {
             unlink(__DIR__ . '/test.php');
         }
-        if (is_dir(sys_get_temp_dir() . '/unwritable')) {
-            rmdir(sys_get_temp_dir() . '/unwritable');
+        if (is_dir(__DIR__ . '/unwritable')) {
+            rmdir(__DIR__ . '/unwritable');
         }
 
         parent::tearDown();
