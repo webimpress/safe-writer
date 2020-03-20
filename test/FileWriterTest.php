@@ -152,16 +152,11 @@ class FileWriterTest extends TestCase
 
     public function testUnwritableDirThrowsException()
     {
-        $dir = __DIR__ . '/unwritable';
-        mkdir($dir);
-        chmod($dir, 0500);
+        $dir = sys_get_temp_dir() . '/unwritable';
+        touch($dir);
 
         $this->expectException(RuntimeException::class);
-        try {
-            FileWriter::writeFile($dir . '/test', 'foo');
-        } finally {
-            chmod($dir, 0700);
-        }
+        FileWriter::writeFile($dir . '/test', 'foo');
     }
 
     public function testRelativeDirectorySaves()
@@ -179,8 +174,8 @@ class FileWriterTest extends TestCase
         if (file_exists(__DIR__ . '/test.php')) {
             unlink(__DIR__ . '/test.php');
         }
-        if (is_dir(__DIR__ . '/unwritable')) {
-            rmdir(__DIR__ . '/unwritable');
+        if (file_exists(sys_get_temp_dir() . '/unwritable')) {
+            unlink(sys_get_temp_dir() . '/unwritable');
         }
 
         parent::tearDown();
