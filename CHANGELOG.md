@@ -22,7 +22,7 @@ All notable changes to this project will be documented in this file, in reverse 
 
 ### Fixed
 
-- Nothing.
+- [#6](https://github.com/webimpress/safe-writer/pull/6) fixes issue when target directory is not writeable - throws exception earlier and prevents fallback to system temp directory.
 
 ## 1.0.1 - 2019-11-16
 
