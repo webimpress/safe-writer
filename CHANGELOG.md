@@ -24,7 +24,7 @@ All notable changes to this project will be documented in this file, in reverse 
 
 - Nothing.
 
-## 2.0.1 - TBD
+## 2.0.1 - 2020-03-21
 
 ### Added
 
@@ -44,7 +44,29 @@ All notable changes to this project will be documented in this file, in reverse 
 
 ### Fixed
 
+- [#6](https://github.com/webimpress/safe-writer/pull/6) fixes issue when target directory is not writeable - throws exception earlier and prevents fallback to system temp directory.
+
+## 1.0.2 - 2020-03-21
+
+### Added
+
 - Nothing.
+
+### Changed
+
+- Nothing.
+
+### Deprecated
+
+- Nothing.
+
+### Removed
+
+- Nothing.
+
+### Fixed
+
+- [#6](https://github.com/webimpress/safe-writer/pull/6) fixes issue when target directory is not writeable - throws exception earlier and prevents fallback to system temp directory.
 
 ## 2.0.0 - 2019-11-27
 
