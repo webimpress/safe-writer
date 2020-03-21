@@ -8,6 +8,7 @@ use function chmod;
 use function dirname;
 use function file_put_contents;
 use function is_writable;
+use function realpath;
 use function rename;
 use function stripos;
 use function tempnam;
@@ -24,9 +25,15 @@ final class FileWriter
     public static function writeFile(string $file, string $content, int $chmod = 0666) : void
     {
         $dir = dirname($file);
-        $tmp = tempnam($dir, 'wsw');
+        // suppress notice thrown when falling back to system temp dir
+        $tmp = @tempnam($dir, 'wsw');
 
         if ($tmp === false) {
+            throw Exception\RuntimeException::unableToCreateTemporaryFile($dir);
+        }
+
+        if (dirname($tmp) !== realpath($dir)) {
+            unlink($tmp);
             throw Exception\RuntimeException::unableToCreateTemporaryFile($dir);
         }
 

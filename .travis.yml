@@ -31,10 +31,10 @@ matrix:
         - TEST_COVERAGE=true
         - CS_CHECK=true
         - DEPS=latest
-    - php: 7.4snapshot
+    - php: 7.4
       env:
         - DEPS=lowest
-    - php: 7.4snapshot
+    - php: 7.4
       env:
         - DEPS=latest
 
