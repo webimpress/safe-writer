@@ -16,7 +16,6 @@ class ChmodExceptionTest extends TestCase
         $file = uniqid('file_', true);
         $exception = ChmodException::unableToChangeChmod($file);
 
-        self::assertInstanceOf(ChmodException::class, $exception);
         self::assertStringContainsString($file, $exception->getMessage());
     }
 }

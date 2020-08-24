@@ -16,7 +16,6 @@ class WriteContentExceptionTest extends TestCase
         $file = uniqid('file_', true);
         $exception = WriteContentException::unableToWriteContent($file);
 
-        self::assertInstanceOf(WriteContentException::class, $exception);
         self::assertStringContainsString($file, $exception->getMessage());
     }
 }
