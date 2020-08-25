@@ -22,7 +22,7 @@
         <PropertyNotSetInConstructor>
             <errorLevel type="suppress">
                 <directory name="test/"/>
-                <referencedProperty name="$backupGlobals"/>
+                <referencedProperty name="$backupStaticAttributes"/>
             </errorLevel>
         </PropertyNotSetInConstructor>
     </issueHandlers>
