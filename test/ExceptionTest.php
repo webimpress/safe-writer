@@ -8,7 +8,9 @@ use Error;
 use PHPUnit\Framework\TestCase;
 use Webimpress\SafeWriter\Exception\ExceptionInterface;
 
+use function assert;
 use function basename;
+use function class_exists;
 use function glob;
 use function interface_exists;
 use function is_a;
@@ -19,7 +21,6 @@ class ExceptionTest extends TestCase
 {
     /**
      * @psalm-return iterable<string, class-string[]>
-     * @psalm-suppress MoreSpecificReturnType
      */
     public function exception() : iterable
     {
@@ -29,7 +30,10 @@ class ExceptionTest extends TestCase
         foreach ($exceptions as $exception) {
             $class = substr(basename($exception), 0, -4);
 
-            yield $class => [$namespace . $class];
+            $fqcn = $namespace . $class;
+            assert(class_exists($fqcn));
+
+            yield $class => [$fqcn];
         }
     }
 
