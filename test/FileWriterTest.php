@@ -69,7 +69,7 @@ class FileWriterTest extends TestCase
 
     private function getFilePermission(string $file) : int
     {
-        return octdec(substr(sprintf('%o', fileperms($file)), -4));
+        return (int) octdec(substr(sprintf('%o', fileperms($file)), -4));
     }
 
     private function getTargetFile() : string
@@ -118,8 +118,12 @@ class FileWriterTest extends TestCase
         foreach ($processes as $i => $process) {
             if (is_resource($process['process'])) {
                 if ($i === 0) {
-                    $readerResult = stream_get_contents($process['pipes'][1]);
-                    $readerErrors = stream_get_contents($process['pipes'][2]);
+                    $readerResult = isset($process['pipes'][1]) && is_resource($process['pipes'][1])
+                        ? stream_get_contents($process['pipes'][1])
+                        : null;
+                    $readerErrors = isset($process['pipes'][2]) && is_resource($process['pipes'][2])
+                        ? stream_get_contents($process['pipes'][2])
+                        : null;
                 }
 
                 $code = proc_close($process['process']);
@@ -135,7 +139,7 @@ class FileWriterTest extends TestCase
             $expectedResult,
             empty($results),
             'Response codes: ' . json_encode($results) . PHP_EOL
-            . 'Reader errors: ' . $readerErrors
+            . 'Reader errors: ' . (string) $readerErrors
         );
         if ($expectedResult) {
             self::assertNotEmpty($readerResult);

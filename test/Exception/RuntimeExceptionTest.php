@@ -16,7 +16,6 @@ class RuntimeExceptionTest extends TestCase
         $dir = uniqid('dir_', true);
         $exception = RuntimeException::unableToCreateTemporaryFile($dir);
 
-        self::assertInstanceOf(RuntimeException::class, $exception);
         self::assertStringContainsString($dir, $exception->getMessage());
     }
 }

@@ -17,7 +17,6 @@ class RenameExceptionTest extends TestCase
         $target = __DIR__ . '/' . uniqid('file_', true);
         $exception = RenameException::unableToMoveFile($file, $target);
 
-        self::assertInstanceOf(RenameException::class, $exception);
         self::assertStringContainsString($file, $exception->getMessage());
         self::assertStringContainsString($target, $exception->getMessage());
     }

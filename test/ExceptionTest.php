@@ -5,11 +5,12 @@ declare(strict_types=1);
 namespace WebimpressTest\SafeWriter;
 
 use Error;
-use Generator;
 use PHPUnit\Framework\TestCase;
 use Webimpress\SafeWriter\Exception\ExceptionInterface;
 
+use function assert;
 use function basename;
+use function class_exists;
 use function glob;
 use function interface_exists;
 use function is_a;
@@ -18,20 +19,27 @@ use function substr;
 
 class ExceptionTest extends TestCase
 {
-    public function exception() : Generator
+    /**
+     * @psalm-return iterable<string, class-string[]>
+     */
+    public function exception() : iterable
     {
-        $namespace = substr(ExceptionInterface::class, 0, strrpos(ExceptionInterface::class, '\\') + 1);
+        $namespace = substr(ExceptionInterface::class, 0, (int) strrpos(ExceptionInterface::class, '\\') + 1);
 
         $exceptions = glob(__DIR__ . '/../src/Exception/*.php');
         foreach ($exceptions as $exception) {
             $class = substr(basename($exception), 0, -4);
 
-            yield $class => [$namespace . $class];
+            $fqcn = $namespace . $class;
+            assert(class_exists($fqcn));
+
+            yield $class => [$fqcn];
         }
     }
 
     /**
      * @dataProvider exception
+     * @psalm-param class-string $exception
      */
     public function testExceptionIsInstanceOfExceptionInterface(string $exception) : void
     {
@@ -41,6 +49,7 @@ class ExceptionTest extends TestCase
 
     /**
      * @dataProvider exception
+     * @psalm-param class-string $exception
      */
     public function testExceptionIsNotInstantiable(string $exception) : void
     {
@@ -50,6 +59,8 @@ class ExceptionTest extends TestCase
 
         $this->expectException(Error::class);
         $this->expectExceptionMessage('Call to private');
+
+        /** @psalm-suppress MixedMethodCall */
         new $exception();
     }
 }
