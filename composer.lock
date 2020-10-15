@@ -3289,16 +3289,16 @@
         },
         {
             "name": "webimpress/coding-standard",
-            "version": "1.1.5",
+            "version": "1.1.6",
             "source": {
                 "type": "git",
                 "url": "https://github.com/webimpress/coding-standard.git",
-                "reference": "f201b55632c933cd80abb15dc7caa21f7c733215"
+                "reference": "86096c377dc19cce12ac3092640b466689743b49"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/webimpress/coding-standard/zipball/f201b55632c933cd80abb15dc7caa21f7c733215",
-                "reference": "f201b55632c933cd80abb15dc7caa21f7c733215",
+                "url": "https://api.github.com/repos/webimpress/coding-standard/zipball/86096c377dc19cce12ac3092640b466689743b49",
+                "reference": "86096c377dc19cce12ac3092640b466689743b49",
                 "shasum": ""
             },
             "require": {
@@ -3336,7 +3336,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2020-04-06T18:45:57+00:00"
+            "time": "2020-10-14T17:34:31+00:00"
         },
         {
             "name": "webmozart/assert",
