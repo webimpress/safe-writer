@@ -14,7 +14,7 @@
     },
     "require-dev": {
         "phpunit/phpunit": "^8.5.8 || ^9.3.7",
-        "vimeo/psalm": "^3.14.2",
+        "vimeo/psalm": "^4.0.1",
         "webimpress/coding-standard": "^1.1.5"
     },
     "autoload": {
