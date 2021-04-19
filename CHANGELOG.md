@@ -18,7 +18,7 @@ All notable changes to this project will be documented in this file, in reverse 
 
 ### Removed
 
-- Nothing.
+- [#51](https://github.com/webimpress/safe-writer/pull/51) removes support for PHP 7.2.
 
 ### Fixed
 

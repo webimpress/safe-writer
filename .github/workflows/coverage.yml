@@ -1,0 +1,29 @@
+name: Coverage
+
+on: [push, pull_request]
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 7.4
+
+      - name: Install dependencies
+        run: composer install --no-progress --optimize-autoloader
+
+      - name: Add coveralls dependency
+        run: composer require --dev php-coveralls/php-coveralls --no-progress --no-interaction
+
+      - name: Run tests with coverage
+        run: composer test-coverage
+
+      - name: Upload coverage to Coveralls
+        env:
+          COVERALLS_REPO_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: php vendor/bin/php-coveralls -v

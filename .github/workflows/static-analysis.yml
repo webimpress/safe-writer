@@ -1,0 +1,21 @@
+name: Static Analysis
+
+on: [push, pull_request]
+
+jobs:
+  phpcs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 7.4
+
+      - name: Install dependencies
+        run: composer install --no-progress --optimize-autoloader
+
+      - name: Run Static Analysis checks
+        run: composer static-analysis
