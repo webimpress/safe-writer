@@ -9,12 +9,12 @@ jobs:
       fail-fast: false
       max-parallel: 15
       matrix:
-        operating-system: [macOS-latest]
-        php-versions: ['7.2', '7.3', '7.4']
+        operating-system: [macOS-latest, ubuntu-latest]
+        php-versions: ['7.2', '7.3', '7.4', '8.0']
     name: PHP ${{ matrix.php-versions }} on ${{ matrix.operating-system }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v1
+        uses: actions/checkout@v2
         
       - name: Setup PHP
         uses: shivammathur/setup-php@master
