@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace WebimpressTest\SafeWriter;
 
+use ErrorException;
 use Generator;
 use PHPUnit\Framework\TestCase;
 use Webimpress\SafeWriter\Exception\RuntimeException;
@@ -20,6 +21,8 @@ use function json_encode;
 use function octdec;
 use function proc_close;
 use function proc_open;
+use function restore_error_handler;
+use function set_error_handler;
 use function sprintf;
 use function stream_get_contents;
 use function substr;
@@ -155,6 +158,24 @@ class FileWriterTest extends TestCase
 
         $this->expectException(RuntimeException::class);
         FileWriter::writeFile($dir . '/test', 'foo');
+    }
+
+    public function testUnwritableDirThrowsExceptionWhenUsingCustomErrorHandler() : void
+    {
+        /** @psalm-suppress InvalidArgument */
+        set_error_handler(static function () : void {
+            throw new ErrorException();
+        });
+
+        $dir = sys_get_temp_dir() . '/unwritable';
+        touch($dir);
+
+        $this->expectException(RuntimeException::class);
+        try {
+            FileWriter::writeFile($dir . '/test', 'foo');
+        } finally {
+            restore_error_handler();
+        }
     }
 
     public function testRelativeDirectorySaves() : void
