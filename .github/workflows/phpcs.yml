@@ -1,0 +1,24 @@
+name: Coding Standards
+
+on: [push, pull_request]
+
+jobs:
+  phpcs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 7.4
+
+      - name: Validate composer.json
+        run: composer validate --strict
+
+      - name: Install dependencies
+        run: composer install --no-progress --optimize-autoloader
+
+      - name: Run CS checks
+        run: composer cs-check

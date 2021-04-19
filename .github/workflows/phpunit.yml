@@ -1,4 +1,4 @@
-name: Unit Testing
+name: Unit Tests
 
 on: [push, pull_request]
 
@@ -17,13 +17,13 @@ jobs:
         uses: actions/checkout@v2
         
       - name: Setup PHP
-        uses: shivammathur/setup-php@master
+        uses: shivammathur/setup-php@v2
         with:
           php-version: ${{ matrix.php-versions }}
           extension-csv: mbstring, xmlwriter
 
       - name: Install dependencies
-        run: composer update --no-progress --prefer-dist --optimize-autoloader
+        run: composer update --no-progress --optimize-autoloader
 
       - name: Run tests
         run: composer test
