@@ -2,7 +2,6 @@
 <ruleset>
     <rule ref="vendor/webimpress/coding-standard/ruleset.xml">
         <exclude name="WebimpressCodingStandard.Functions.Throws.AdditionalThrowTag"/>
-        <exclude name="WebimpressCodingStandard.Functions.Throws.WrongNumberExact"/>
     </rule>
 
     <!-- Display progress -->
