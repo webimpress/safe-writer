@@ -10,7 +10,7 @@ All notable changes to this project will be documented in this file, in reverse 
 
 ### Changed
 
-- Nothing.
+- [#50](https://github.com/webimpress/safe-writer/pull/50) changes suppressing warnings in `FileWriter::writeFile` method. Custom error handler is used instead of `@`, so it is not possible to handle them outside anymore.
 
 ### Deprecated
 
