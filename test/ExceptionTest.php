@@ -14,7 +14,6 @@ use function class_exists;
 use function glob;
 use function interface_exists;
 use function is_a;
-use function strrpos;
 use function substr;
 
 class ExceptionTest extends TestCase
@@ -24,14 +23,14 @@ class ExceptionTest extends TestCase
      */
     public function exception() : iterable
     {
-        $namespace = substr(ExceptionInterface::class, 0, (int) strrpos(ExceptionInterface::class, '\\') + 1);
+        $namespace = 'Webimpress\\SafeWriter\\Exception\\';
 
         $exceptions = glob(__DIR__ . '/../src/Exception/*.php');
         foreach ($exceptions as $exception) {
             $class = substr(basename($exception), 0, -4);
 
             $fqcn = $namespace . $class;
-            assert(class_exists($fqcn));
+            assert(class_exists($fqcn) || interface_exists($fqcn));
 
             yield $class => [$fqcn];
         }
