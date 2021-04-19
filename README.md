@@ -1,6 +1,8 @@
 # Webimpress Safe Writer
 
-[![Build Status](https://travis-ci.com/webimpress/safe-writer.svg?branch=master)](https://travis-ci.com/webimpress/safe-writer)
+[![Unit Tests](https://github.com/webimpress/safe-writer/actions/workflows/phpunit.yml/badge.svg)](https://github.com/webimpress/safe-writer/actions/workflows/phpunit.yml)
+[![Coding Standards](https://github.com/webimpress/safe-writer/actions/workflows/phpcs.yml/badge.svg)](https://github.com/webimpress/safe-writer/actions/workflows/phpcs.yml)
+[![Static Analysis](https://github.com/webimpress/safe-writer/actions/workflows/static-analysis.yml/badge.svg)](https://github.com/webimpress/safe-writer/actions/workflows/static-analysis.yml)
 [![Coverage Status](https://coveralls.io/repos/github/webimpress/safe-writer/badge.svg?branch=master)](https://coveralls.io/github/webimpress/safe-writer?branch=master)
 
 Write files safely to avoid race conditions when
