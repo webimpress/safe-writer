@@ -162,8 +162,7 @@ class FileWriterTest extends TestCase
 
     public function testUnwritableDirThrowsExceptionWhenUsingCustomErrorHandler() : void
     {
-        /** @psalm-suppress InvalidArgument */
-        set_error_handler(static function () : void {
+        set_error_handler(static function () : bool {
             throw new ErrorException();
         });
 
