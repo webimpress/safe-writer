@@ -162,9 +162,10 @@ class FileWriterTest extends TestCase
 
     public function testUnwritableDirThrowsExceptionWhenUsingCustomErrorHandler() : void
     {
-        set_error_handler(static function () : bool {
+        $errorHandler = static function () : bool {
             throw new ErrorException();
-        });
+        };
+        set_error_handler($errorHandler);
 
         $dir = sys_get_temp_dir() . '/unwritable';
         touch($dir);
@@ -173,6 +174,9 @@ class FileWriterTest extends TestCase
         try {
             FileWriter::writeFile($dir . '/test', 'foo');
         } finally {
+            self::assertSame($errorHandler, set_error_handler(static function () : bool {
+                return true;
+            }));
             restore_error_handler();
         }
     }
