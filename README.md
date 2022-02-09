@@ -13,7 +13,7 @@ the same file is written multiple times in a short time period.
 Using composer:
 
 ```console
-$ composer require webimpress/safe-writer
+composer require webimpress/safe-writer
 ```
 
 ## Usage
