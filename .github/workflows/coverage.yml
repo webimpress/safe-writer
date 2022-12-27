@@ -18,7 +18,7 @@ jobs:
         run: composer install --no-progress --optimize-autoloader
 
       - name: Add coveralls dependency
-        run: composer require --dev php-coveralls/php-coveralls:^2.5 --no-progress --no-interaction
+        run: composer require --dev php-coveralls/php-coveralls --update-with-dependencies --no-progress --no-interaction
 
       - name: Run tests with coverage
         run: composer test-coverage
