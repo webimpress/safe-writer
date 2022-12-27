@@ -9,7 +9,7 @@ $start = microtime(true);
 $numberOfReads = 0;
 while (microtime(true) - $start < 3) {
     if (file_exists($file)) {
-        /** @var mixed $data */
+        /** @psalm-suppress MissingFile */
         $data = include $file;
         if (! is_array($data)) {
             exit(1);

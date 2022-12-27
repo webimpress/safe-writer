@@ -15,7 +15,6 @@ use function dirname;
 use function file_exists;
 use function file_get_contents;
 use function fileperms;
-use function is_numeric;
 use function is_resource;
 use function json_encode;
 use function octdec;
@@ -106,7 +105,7 @@ class FileWriterTest extends TestCase
             $processes[0]['pipes']
         );
 
-        for ($i = 1; $i <= 20; ++$i) {
+        for ($i = 1; $i <= 50; ++$i) {
             $processes[$i]['pipes'] = [];
             $processes[$i]['process'] = proc_open(
                 'php ' . $writer,
@@ -146,7 +145,7 @@ class FileWriterTest extends TestCase
         );
         if ($expectedResult) {
             self::assertNotEmpty($readerResult);
-            self::assertTrue(is_numeric($readerResult));
+            self::assertIsNumeric($readerResult);
             self::assertGreaterThan(0, $readerResult);
         }
     }
