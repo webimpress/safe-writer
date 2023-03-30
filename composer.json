@@ -13,7 +13,7 @@
         "php": "^8.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^10.0.0",
+        "phpunit/phpunit": "^9.6.6 || ^10.0.19",
         "vimeo/psalm": "^5.4",
         "webimpress/coding-standard": "^1.3.1"
     },
