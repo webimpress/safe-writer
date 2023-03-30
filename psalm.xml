@@ -4,6 +4,8 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns="https://getpsalm.org/schema/config"
     xsi:schemaLocation="https://getpsalm.org/schema/config vendor/vimeo/psalm/config.xsd"
+    findUnusedCode="true"
+    findUnusedBaselineEntry="true"
 >
     <projectFiles>
         <directory name="src"/>
@@ -25,5 +27,10 @@
                 <referencedProperty name="$backupStaticAttributes"/>
             </errorLevel>
         </PropertyNotSetInConstructor>
+        <UnusedClass>
+            <errorLevel type="suppress">
+                <directory name="test/"/>
+            </errorLevel>
+        </UnusedClass>
     </issueHandlers>
 </psalm>

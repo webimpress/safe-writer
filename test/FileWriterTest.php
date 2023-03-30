@@ -120,12 +120,8 @@ class FileWriterTest extends TestCase
         foreach ($processes as $i => $process) {
             if (is_resource($process['process'])) {
                 if ($i === 0) {
-                    $readerResult = isset($process['pipes'][1]) && is_resource($process['pipes'][1])
-                        ? stream_get_contents($process['pipes'][1])
-                        : null;
-                    $readerErrors = isset($process['pipes'][2]) && is_resource($process['pipes'][2])
-                        ? stream_get_contents($process['pipes'][2])
-                        : null;
+                    $readerResult = isset($process['pipes'][1]) ? stream_get_contents($process['pipes'][1]) : null;
+                    $readerErrors = isset($process['pipes'][2]) ? stream_get_contents($process['pipes'][2]) : null;
                 }
 
                 $code = proc_close($process['process']);
