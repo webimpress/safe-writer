@@ -38,7 +38,6 @@ class ExceptionTest extends TestCase
 
     /**
      * @dataProvider exception
-     * @psalm-param class-string $exception
      */
     public function testExceptionIsInstanceOfExceptionInterface(string $exception) : void
     {
@@ -48,7 +47,6 @@ class ExceptionTest extends TestCase
 
     /**
      * @dataProvider exception
-     * @psalm-param class-string $exception
      */
     public function testExceptionIsNotInstantiable(string $exception) : void
     {
@@ -59,7 +57,7 @@ class ExceptionTest extends TestCase
         $this->expectException(Error::class);
         $this->expectExceptionMessage('Call to private');
 
-        /** @psalm-suppress MixedMethodCall */
+        /** @psalm-suppress InvalidStringClass */
         new $exception();
     }
 }
