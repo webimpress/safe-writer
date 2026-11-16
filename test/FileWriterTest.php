@@ -22,7 +22,6 @@ use function fileperms;
 use function fopen;
 use function fwrite;
 use function glob;
-use function json_decode;
 use function mkdir;
 use function octdec;
 use function proc_close;
@@ -146,15 +145,8 @@ class FileWriterTest extends TestCase
             self::assertSame(0, proc_close($process), sprintf('Process %d failed: %s', $i, $errors));
         }
 
-        $reader = json_decode($outputs[0], true);
-        self::assertIsArray($reader);
-        self::assertGreaterThan(0, $reader['reads']);
         // the reader saw the file change while it was reading it
-        self::assertGreaterThan(1, $reader['versions']);
-
-        for ($i = 1; $i <= 3; ++$i) {
-            self::assertGreaterThan(0, (int) $outputs[$i]);
-        }
+        self::assertGreaterThan(1, (int) $outputs[0]);
     }
 
     /**

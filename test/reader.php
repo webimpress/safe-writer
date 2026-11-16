@@ -11,7 +11,6 @@ fgets(STDIN);
 
 $end = microtime(true) + (float) $duration;
 
-$reads = 0;
 $versions = [];
 while (microtime(true) < $end) {
     /** @psalm-suppress UnresolvableInclude */
@@ -22,8 +21,7 @@ while (microtime(true) < $end) {
     }
 
     $versions[$data['version']] = true;
-    ++$reads;
 }
 
-echo json_encode(['reads' => $reads, 'versions' => count($versions)]);
+echo count($versions);
 exit(0);

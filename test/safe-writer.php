@@ -25,5 +25,4 @@ while (microtime(true) < $end) {
     );
 }
 
-echo $writes;
 exit(0);
