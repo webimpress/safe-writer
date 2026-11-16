@@ -11,10 +11,15 @@ use Webimpress\SafeWriter\Exception\RuntimeException;
 use Webimpress\SafeWriter\FileWriter;
 
 use function basename;
+use function clearstatcache;
 use function dirname;
+use function fclose;
 use function file_exists;
 use function file_get_contents;
+use function file_put_contents;
+use function fileinode;
 use function fileperms;
+use function fopen;
 use function glob;
 use function is_resource;
 use function json_encode;
@@ -145,6 +150,28 @@ class FileWriterTest extends TestCase
         self::assertNotEmpty($readerResult);
         self::assertIsNumeric($readerResult);
         self::assertGreaterThan(0, $readerResult);
+    }
+
+    /**
+     * @requires OS Darwin|Linux
+     */
+    public function testFileIsReplacedNotOverwritten() : void
+    {
+        $targetFile = $this->getTargetFile();
+        file_put_contents($targetFile, 'old content');
+        $inode = fileinode($targetFile);
+        $handle = fopen($targetFile, 'rb');
+        self::assertIsResource($handle);
+
+        FileWriter::writeFile($targetFile, 'new content');
+        clearstatcache();
+
+        self::assertNotSame($inode, fileinode($targetFile));
+        self::assertSame('old content', stream_get_contents($handle));
+        self::assertSame('new content', file_get_contents($targetFile));
+        self::assertSame([$targetFile], glob($this->dir . '/*'));
+
+        fclose($handle);
     }
 
     public function testUnwritableDirThrowsException() : void
