@@ -100,6 +100,45 @@ class FileWriterTest extends TestCase
 
     public function testConcurrentWritersNeverExposePartialContent() : void
     {
+        $codes = $this->runConcurrentWriters(__DIR__ . '/safe-writer.php');
+
+        foreach ($codes as $i => $code) {
+            self::assertNotNull($code, sprintf('Process %d timed out', $i));
+            self::assertSame(
+                0,
+                $code,
+                sprintf('Process %d failed: %s', $i, (string) file_get_contents($this->dir . '/' . $i . '.err'))
+            );
+        }
+        self::assertGreaterThan(
+            1,
+            (int) file_get_contents($this->dir . '/0.out'),
+            'The reader did not see the file change'
+        );
+    }
+
+    /**
+     * Shows that the multi-process test catches a writer that overwrites the file in place.
+     * Runs only on Linux, where the reader sees the partial file reliably.
+     *
+     * @requires OS Linux
+     */
+    public function testStandardWriterExposesPartialContent() : void
+    {
+        $codes = $this->runConcurrentWriters(__DIR__ . '/standard-writer.php');
+
+        self::assertNotNull($codes[0], 'The reader timed out');
+        self::assertNotSame(0, $codes[0], 'The reader did not see partial content');
+    }
+
+    /**
+     * Starts writers and a reader on the same file and returns their exit codes, with the reader at index 0.
+     * An exit code is null when the process timed out.
+     *
+     * @return null[]|int[]
+     */
+    private function runConcurrentWriters(string $writerScript) : array
+    {
         $file = $this->dir . '/concurrent.php';
         $stopFile = $this->dir . '/stop';
         FileWriter::writeFile($file, "<?php\nreturn ['version' => 'initial'];");
@@ -108,7 +147,7 @@ class FileWriterTest extends TestCase
         // The reader stops after 1 second, once it has seen the file change, or after 10 seconds.
         $commands = [];
         for ($i = 1; $i <= 3; ++$i) {
-            $commands[$i] = [__DIR__ . '/safe-writer.php', $file, $stopFile, '20', (string) $i];
+            $commands[$i] = [$writerScript, $file, $stopFile, '20', (string) $i];
         }
         $commands[0] = [__DIR__ . '/reader.php', $file, '1', '10'];
 
@@ -134,19 +173,7 @@ class FileWriterTest extends TestCase
             $codes[$i] = $this->waitForExit($processes[$i], $deadline);
         }
 
-        foreach ($codes as $i => $code) {
-            self::assertNotNull($code, sprintf('Process %d timed out', $i));
-            self::assertSame(
-                0,
-                $code,
-                sprintf('Process %d failed: %s', $i, (string) file_get_contents($this->dir . '/' . $i . '.err'))
-            );
-        }
-        self::assertGreaterThan(
-            1,
-            (int) file_get_contents($this->dir . '/0.out'),
-            'The reader did not see the file change'
-        );
+        return $codes;
     }
 
     /**
