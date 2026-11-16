@@ -11,16 +11,24 @@ use Webimpress\SafeWriter\Exception\RuntimeException;
 use Webimpress\SafeWriter\FileWriter;
 
 use function basename;
+use function clearstatcache;
 use function dirname;
-use function file_exists;
+use function fclose;
 use function file_get_contents;
+use function file_put_contents;
+use function fileinode;
 use function fileperms;
-use function is_resource;
-use function json_encode;
+use function fopen;
+use function glob;
+use function microtime;
+use function mkdir;
 use function octdec;
 use function proc_close;
+use function proc_get_status;
 use function proc_open;
+use function proc_terminate;
 use function restore_error_handler;
+use function rmdir;
 use function set_error_handler;
 use function sprintf;
 use function stream_get_contents;
@@ -30,11 +38,22 @@ use function touch;
 use function umask;
 use function uniqid;
 use function unlink;
+use function usleep;
 
-use const PHP_EOL;
+use const PHP_BINARY;
 
 class FileWriterTest extends TestCase
 {
+    private string $dir;
+
+    protected function setUp() : void
+    {
+        parent::setUp();
+
+        $this->dir = sys_get_temp_dir() . '/' . uniqid('safe-writer_', true);
+        mkdir($this->dir);
+    }
+
     public function testContentIsSavedToTheFile() : void
     {
         $targetFile = $this->getTargetFile();
@@ -76,79 +95,134 @@ class FileWriterTest extends TestCase
 
     private function getTargetFile() : string
     {
-        return sys_get_temp_dir() . '/' . uniqid('test_', true) . '.php';
+        return $this->dir . '/' . uniqid('test_', true) . '.php';
     }
 
-    public function writer() : Generator
+    public function testConcurrentWritersNeverExposePartialContent() : void
     {
-        //                     writer script                   expected result
-        yield 'safe-writer' => [__DIR__ . '/safe-writer.php', true];
-        yield 'standard-writer' => [__DIR__ . '/standard-writer.php', false];
+        $codes = $this->runConcurrentWriters(__DIR__ . '/safe-writer.php');
+
+        foreach ($codes as $i => $code) {
+            self::assertNotNull($code, sprintf('Process %d timed out', $i));
+            self::assertSame(
+                0,
+                $code,
+                sprintf('Process %d failed: %s', $i, (string) file_get_contents($this->dir . '/' . $i . '.err'))
+            );
+        }
+        self::assertGreaterThan(
+            1,
+            (int) file_get_contents($this->dir . '/0.out'),
+            'The reader did not see the file change'
+        );
     }
 
     /**
-     * @dataProvider writer
+     * Shows that the multi-process test catches a writer that overwrites the file in place.
+     * Runs only on Linux, where the reader sees the partial file reliably.
+     *
+     * @requires OS Linux
      */
-    public function testMultipleWriters(string $writer, bool $expectedResult) : void
+    public function testStandardWriterExposesPartialContent() : void
     {
+        $codes = $this->runConcurrentWriters(__DIR__ . '/standard-writer.php');
+
+        self::assertNotNull($codes[0], 'The reader timed out');
+        self::assertNotSame(0, $codes[0], 'The reader did not see partial content');
+    }
+
+    /**
+     * Starts writers and a reader on the same file and returns their exit codes, with the reader at index 0.
+     * An exit code is null when the process timed out.
+     *
+     * @return null[]|int[]
+     */
+    private function runConcurrentWriters(string $writerScript) : array
+    {
+        $file = $this->dir . '/concurrent.php';
+        $stopFile = $this->dir . '/stop';
+        FileWriter::writeFile($file, "<?php\nreturn ['version' => 'initial'];");
+
+        // Writers run until the reader is done, so the reader always sees them write.
+        // The reader stops after 1 second, once it has seen the file change, or after 10 seconds.
+        $commands = [];
+        for ($i = 1; $i <= 3; ++$i) {
+            $commands[$i] = [$writerScript, $file, $stopFile, '20', (string) $i];
+        }
+        $commands[0] = [__DIR__ . '/reader.php', $file, '1', '10'];
+
         $processes = [];
-        $descriptorSpec = [
-            0 => ['pipe', 'r'],
-            1 => ['pipe', 'w'],
-            2 => ['pipe', 'w'],
-        ];
-
-        $processes[0]['pipes'] = [];
-        $processes[0]['process'] = proc_open(
-            'php ' . __DIR__ . '/reader.php',
-            $descriptorSpec,
-            $processes[0]['pipes']
-        );
-
-        for ($i = 1; $i <= 50; ++$i) {
-            $processes[$i]['pipes'] = [];
-            $processes[$i]['process'] = proc_open(
-                'php ' . $writer,
-                $descriptorSpec,
-                $processes[$i]['pipes']
+        foreach ($commands as $i => $command) {
+            $pipes = [];
+            $process = proc_open(
+                [PHP_BINARY, ...$command],
+                [
+                    1 => ['file', $this->dir . '/' . $i . '.out', 'w'],
+                    2 => ['file', $this->dir . '/' . $i . '.err', 'w'],
+                ],
+                $pipes
             );
+            self::assertIsResource($process);
+            $processes[$i] = $process;
         }
 
-        $readerResult = null;
-        $readerErrors = null;
-        $results = [];
-        foreach ($processes as $i => $process) {
-            if (is_resource($process['process'])) {
-                if ($i === 0) {
-                    $readerResult = isset($process['pipes'][1]) ? stream_get_contents($process['pipes'][1]) : null;
-                    $readerErrors = isset($process['pipes'][2]) ? stream_get_contents($process['pipes'][2]) : null;
-                }
+        $deadline = microtime(true) + 30;
+        $codes = [0 => $this->waitForExit($processes[0], $deadline)];
+        touch($stopFile);
+        for ($i = 1; $i <= 3; ++$i) {
+            $codes[$i] = $this->waitForExit($processes[$i], $deadline);
+        }
 
-                $code = proc_close($process['process']);
-                if ($code !== 0) {
-                    $results[$i] = $code;
-                }
-            } else {
-                self::fail(sprintf('Process %d is not a resource', $i));
+        return $codes;
+    }
+
+    /**
+     * Returns the exit code, or null when the process is still running at the deadline and has been terminated.
+     *
+     * @param resource $process
+     */
+    private function waitForExit($process, float $deadline) : ?int
+    {
+        while (microtime(true) < $deadline) {
+            $status = proc_get_status($process);
+            if (! $status['running']) {
+                proc_close($process);
+                return $status['exitcode'];
             }
+
+            usleep(10000);
         }
 
-        self::assertSame(
-            $expectedResult,
-            empty($results),
-            'Response codes: ' . json_encode($results) . PHP_EOL
-            . 'Reader errors: ' . (string) $readerErrors
-        );
-        if ($expectedResult) {
-            self::assertNotEmpty($readerResult);
-            self::assertIsNumeric($readerResult);
-            self::assertGreaterThan(0, $readerResult);
-        }
+        proc_terminate($process);
+        proc_close($process);
+        return null;
+    }
+
+    /**
+     * @requires OS Darwin|Linux
+     */
+    public function testFileIsReplacedNotOverwritten() : void
+    {
+        $targetFile = $this->getTargetFile();
+        file_put_contents($targetFile, 'old content');
+        $inode = fileinode($targetFile);
+        $handle = fopen($targetFile, 'rb');
+        self::assertIsResource($handle);
+
+        FileWriter::writeFile($targetFile, 'new content');
+        clearstatcache();
+
+        self::assertNotSame($inode, fileinode($targetFile));
+        self::assertSame('old content', stream_get_contents($handle));
+        self::assertSame('new content', file_get_contents($targetFile));
+        self::assertSame([$targetFile], glob($this->dir . '/*'));
+
+        fclose($handle);
     }
 
     public function testUnwritableDirThrowsException() : void
     {
-        $dir = sys_get_temp_dir() . '/unwritable';
+        $dir = $this->dir . '/unwritable';
         touch($dir);
 
         $this->expectException(RuntimeException::class);
@@ -162,7 +236,7 @@ class FileWriterTest extends TestCase
         };
         set_error_handler($errorHandler);
 
-        $dir = sys_get_temp_dir() . '/unwritable';
+        $dir = $this->dir . '/unwritable';
         touch($dir);
 
         $this->expectException(RuntimeException::class);
@@ -188,12 +262,11 @@ class FileWriterTest extends TestCase
 
     protected function tearDown() : void
     {
-        if (file_exists(__DIR__ . '/test.php')) {
-            unlink(__DIR__ . '/test.php');
+        $files = glob($this->dir . '/*');
+        foreach ($files === false ? [] : $files as $file) {
+            unlink($file);
         }
-        if (file_exists(sys_get_temp_dir() . '/unwritable')) {
-            unlink(sys_get_temp_dir() . '/unwritable');
-        }
+        rmdir($this->dir);
 
         parent::tearDown();
     }

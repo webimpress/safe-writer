@@ -2,13 +2,27 @@
 
 declare(strict_types=1);
 
-$data = array_fill(0, 100, $_SERVER);
+/** @var string[] $argv */
+[, $file, $stopFile, $maxDuration, $id] = $argv;
 
-// sleep for something between 0.1-2s
-usleep(random_int(100000, 2000000));
+$data = array_fill(0, 1000, str_repeat('x', 100));
 
-file_put_contents(
-    __DIR__ . '/test.php',
-    "<?php\nreturn " . var_export($data, true) . ';',
-    LOCK_EX
-);
+$end = microtime(true) + (float) $maxDuration;
+
+$writes = 0;
+while (microtime(true) < $end) {
+    clearstatcache();
+    if (file_exists($stopFile)) {
+        break;
+    }
+
+    ++$writes;
+
+    file_put_contents(
+        $file,
+        "<?php\nreturn " . var_export(['version' => $id . '-' . $writes, 'data' => $data], true) . ';',
+        LOCK_EX
+    );
+}
+
+exit(0);

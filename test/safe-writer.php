@@ -4,12 +4,26 @@ declare(strict_types=1);
 
 include __DIR__ . '/../vendor/autoload.php';
 
-$data = array_fill(0, 100, $_SERVER);
+/** @var string[] $argv */
+[, $file, $stopFile, $maxDuration, $id] = $argv;
 
-// sleep for something between 0.1-2s
-usleep(random_int(100000, 2000000));
+$data = array_fill(0, 1000, str_repeat('x', 100));
 
-Webimpress\SafeWriter\FileWriter::writeFile(
-    __DIR__ . '/test.php',
-    "<?php\nreturn " . var_export($data, true) . ';'
-);
+$end = microtime(true) + (float) $maxDuration;
+
+$writes = 0;
+while (microtime(true) < $end) {
+    clearstatcache();
+    if (file_exists($stopFile)) {
+        break;
+    }
+
+    ++$writes;
+
+    Webimpress\SafeWriter\FileWriter::writeFile(
+        $file,
+        "<?php\nreturn " . var_export(['version' => $id . '-' . $writes, 'data' => $data], true) . ';'
+    );
+}
+
+exit(0);

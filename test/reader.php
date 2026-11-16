@@ -2,22 +2,29 @@
 
 declare(strict_types=1);
 
-$file = __DIR__ . '/test.php';
+/** @var string[] $argv */
+[, $file, $minDuration, $maxDuration] = $argv;
 
 $start = microtime(true);
 
-$numberOfReads = 0;
-while (microtime(true) - $start < 3) {
-    if (file_exists($file)) {
-        /** @psalm-suppress MissingFile */
-        $data = include $file;
-        if (! is_array($data)) {
-            exit(1);
-        }
-
-        ++$numberOfReads;
+$versions = [];
+while (true) {
+    $elapsed = microtime(true) - $start;
+    if ($elapsed >= (float) $maxDuration
+        || ($elapsed >= (float) $minDuration && count($versions) > 1)
+    ) {
+        break;
     }
+
+    /** @psalm-suppress UnresolvableInclude */
+    $data = include $file;
+    if (! is_array($data) || ! isset($data['version'])) {
+        fwrite(STDERR, 'Invalid content read from ' . $file);
+        exit(1);
+    }
+
+    $versions[$data['version']] = true;
 }
 
-echo $numberOfReads;
+echo count($versions);
 exit(0);
