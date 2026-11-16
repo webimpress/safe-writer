@@ -2,22 +2,28 @@
 
 declare(strict_types=1);
 
-$file = __DIR__ . '/test.php';
+/** @var string[] $argv */
+[, $file, $duration] = $argv;
 
-$start = microtime(true);
+// wait until all processes are started
+echo 'ready', PHP_EOL;
+fgets(STDIN);
 
-$numberOfReads = 0;
-while (microtime(true) - $start < 3) {
-    if (file_exists($file)) {
-        /** @psalm-suppress MissingFile */
-        $data = include $file;
-        if (! is_array($data)) {
-            exit(1);
-        }
+$end = microtime(true) + (float) $duration;
 
-        ++$numberOfReads;
+$reads = 0;
+$versions = [];
+while (microtime(true) < $end) {
+    /** @psalm-suppress UnresolvableInclude */
+    $data = include $file;
+    if (! is_array($data) || ! isset($data['version'])) {
+        fwrite(STDERR, 'Invalid content read from ' . $file);
+        exit(1);
     }
+
+    $versions[$data['version']] = true;
+    ++$reads;
 }
 
-echo $numberOfReads;
+echo json_encode(['reads' => $reads, 'versions' => count($versions)]);
 exit(0);

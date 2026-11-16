@@ -14,15 +14,15 @@ use function basename;
 use function clearstatcache;
 use function dirname;
 use function fclose;
-use function file_exists;
+use function fgets;
 use function file_get_contents;
 use function file_put_contents;
 use function fileinode;
 use function fileperms;
 use function fopen;
+use function fwrite;
 use function glob;
-use function is_resource;
-use function json_encode;
+use function json_decode;
 use function mkdir;
 use function octdec;
 use function proc_close;
@@ -39,6 +39,7 @@ use function umask;
 use function uniqid;
 use function unlink;
 
+use const PHP_BINARY;
 use const PHP_EOL;
 
 class FileWriterTest extends TestCase
@@ -97,59 +98,63 @@ class FileWriterTest extends TestCase
         return $this->dir . '/' . uniqid('test_', true) . '.php';
     }
 
-    public function testMultipleWriters() : void
+    public function testConcurrentWritersNeverExposePartialContent() : void
     {
+        $file = $this->dir . '/concurrent.php';
+        FileWriter::writeFile($file, "<?php\nreturn ['version' => 'initial'];");
+
+        $duration = '2';
+        $commands = [[__DIR__ . '/reader.php', $file, $duration]];
+        for ($i = 1; $i <= 3; ++$i) {
+            $commands[] = [__DIR__ . '/safe-writer.php', $file, $duration, (string) $i];
+        }
+
         $processes = [];
-        $descriptorSpec = [
-            0 => ['pipe', 'r'],
-            1 => ['pipe', 'w'],
-            2 => ['pipe', 'w'],
-        ];
-
-        $processes[0]['pipes'] = [];
-        $processes[0]['process'] = proc_open(
-            'php ' . __DIR__ . '/reader.php',
-            $descriptorSpec,
-            $processes[0]['pipes']
-        );
-
-        for ($i = 1; $i <= 50; ++$i) {
-            $processes[$i]['pipes'] = [];
-            $processes[$i]['process'] = proc_open(
-                'php ' . __DIR__ . '/safe-writer.php',
-                $descriptorSpec,
-                $processes[$i]['pipes']
+        $pipes = [];
+        foreach ($commands as $i => $command) {
+            $processPipes = [];
+            $process = proc_open(
+                [PHP_BINARY, ...$command],
+                [
+                    0 => ['pipe', 'r'],
+                    1 => ['pipe', 'w'],
+                    2 => ['pipe', 'w'],
+                ],
+                $processPipes
             );
+            self::assertIsResource($process);
+            $processes[$i] = $process;
+            $pipes[$i] = $processPipes;
         }
 
-        $readerResult = null;
-        $readerErrors = null;
-        $results = [];
+        // start all processes at the same time
+        foreach ($pipes as $processPipes) {
+            self::assertSame('ready' . PHP_EOL, fgets($processPipes[1]));
+        }
+        foreach ($pipes as $processPipes) {
+            fwrite($processPipes[0], 'go' . PHP_EOL);
+            fclose($processPipes[0]);
+        }
+
+        $outputs = [];
         foreach ($processes as $i => $process) {
-            if (is_resource($process['process'])) {
-                if ($i === 0) {
-                    $readerResult = isset($process['pipes'][1]) ? stream_get_contents($process['pipes'][1]) : null;
-                    $readerErrors = isset($process['pipes'][2]) ? stream_get_contents($process['pipes'][2]) : null;
-                }
+            $outputs[$i] = (string) stream_get_contents($pipes[$i][1]);
+            $errors = (string) stream_get_contents($pipes[$i][2]);
+            fclose($pipes[$i][1]);
+            fclose($pipes[$i][2]);
 
-                $code = proc_close($process['process']);
-                if ($code !== 0) {
-                    $results[$i] = $code;
-                }
-            } else {
-                self::fail(sprintf('Process %d is not a resource', $i));
-            }
+            self::assertSame(0, proc_close($process), sprintf('Process %d failed: %s', $i, $errors));
         }
 
-        self::assertSame(
-            [],
-            $results,
-            'Response codes: ' . json_encode($results) . PHP_EOL
-            . 'Reader errors: ' . (string) $readerErrors
-        );
-        self::assertNotEmpty($readerResult);
-        self::assertIsNumeric($readerResult);
-        self::assertGreaterThan(0, $readerResult);
+        $reader = json_decode($outputs[0], true);
+        self::assertIsArray($reader);
+        self::assertGreaterThan(0, $reader['reads']);
+        // the reader saw the file change while it was reading it
+        self::assertGreaterThan(1, $reader['versions']);
+
+        for ($i = 1; $i <= 3; ++$i) {
+            self::assertGreaterThan(0, (int) $outputs[$i]);
+        }
     }
 
     /**
@@ -216,9 +221,6 @@ class FileWriterTest extends TestCase
 
     protected function tearDown() : void
     {
-        if (file_exists(__DIR__ . '/test.php')) {
-            unlink(__DIR__ . '/test.php');
-        }
         $files = glob($this->dir . '/*');
         foreach ($files === false ? [] : $files as $file) {
             unlink($file);
