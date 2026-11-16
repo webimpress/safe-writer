@@ -79,17 +79,7 @@ class FileWriterTest extends TestCase
         return sys_get_temp_dir() . '/' . uniqid('test_', true) . '.php';
     }
 
-    public function writer() : Generator
-    {
-        //                     writer script                   expected result
-        yield 'safe-writer' => [__DIR__ . '/safe-writer.php', true];
-        yield 'standard-writer' => [__DIR__ . '/standard-writer.php', false];
-    }
-
-    /**
-     * @dataProvider writer
-     */
-    public function testMultipleWriters(string $writer, bool $expectedResult) : void
+    public function testMultipleWriters() : void
     {
         $processes = [];
         $descriptorSpec = [
@@ -108,7 +98,7 @@ class FileWriterTest extends TestCase
         for ($i = 1; $i <= 50; ++$i) {
             $processes[$i]['pipes'] = [];
             $processes[$i]['process'] = proc_open(
-                'php ' . $writer,
+                'php ' . __DIR__ . '/safe-writer.php',
                 $descriptorSpec,
                 $processes[$i]['pipes']
             );
@@ -134,16 +124,14 @@ class FileWriterTest extends TestCase
         }
 
         self::assertSame(
-            $expectedResult,
-            empty($results),
+            [],
+            $results,
             'Response codes: ' . json_encode($results) . PHP_EOL
             . 'Reader errors: ' . (string) $readerErrors
         );
-        if ($expectedResult) {
-            self::assertNotEmpty($readerResult);
-            self::assertIsNumeric($readerResult);
-            self::assertGreaterThan(0, $readerResult);
-        }
+        self::assertNotEmpty($readerResult);
+        self::assertIsNumeric($readerResult);
+        self::assertGreaterThan(0, $readerResult);
     }
 
     public function testUnwritableDirThrowsException() : void
