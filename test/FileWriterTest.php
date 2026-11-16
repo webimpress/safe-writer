@@ -14,13 +14,11 @@ use function basename;
 use function clearstatcache;
 use function dirname;
 use function fclose;
-use function fgets;
 use function file_get_contents;
 use function file_put_contents;
 use function fileinode;
 use function fileperms;
 use function fopen;
-use function fwrite;
 use function glob;
 use function mkdir;
 use function octdec;
@@ -39,7 +37,6 @@ use function uniqid;
 use function unlink;
 
 use const PHP_BINARY;
-use const PHP_EOL;
 
 class FileWriterTest extends TestCase
 {
@@ -100,13 +97,16 @@ class FileWriterTest extends TestCase
     public function testConcurrentWritersNeverExposePartialContent() : void
     {
         $file = $this->dir . '/concurrent.php';
+        $stopFile = $this->dir . '/stop';
         FileWriter::writeFile($file, "<?php\nreturn ['version' => 'initial'];");
 
-        $duration = '2';
-        $commands = [[__DIR__ . '/reader.php', $file, $duration]];
+        // Writers run until the reader is done, so the reader always sees them write.
+        // The reader stops after 1 second, once it has seen the file change, or after 10 seconds.
+        $commands = [];
         for ($i = 1; $i <= 3; ++$i) {
-            $commands[] = [__DIR__ . '/safe-writer.php', $file, $duration, (string) $i];
+            $commands[$i] = [__DIR__ . '/safe-writer.php', $file, $stopFile, '20', (string) $i];
         }
+        $commands[0] = [__DIR__ . '/reader.php', $file, '1', '10'];
 
         $processes = [];
         $pipes = [];
@@ -126,27 +126,26 @@ class FileWriterTest extends TestCase
             $pipes[$i] = $processPipes;
         }
 
-        // start all processes at the same time
-        foreach ($pipes as $processPipes) {
-            self::assertSame('ready' . PHP_EOL, fgets($processPipes[1]));
-        }
-        foreach ($pipes as $processPipes) {
-            fwrite($processPipes[0], 'go' . PHP_EOL);
-            fclose($processPipes[0]);
-        }
-
         $outputs = [];
-        foreach ($processes as $i => $process) {
+        $errors = [];
+        $codes = [];
+        foreach ([0, 1, 2, 3] as $i) {
+            fclose($pipes[$i][0]);
             $outputs[$i] = (string) stream_get_contents($pipes[$i][1]);
-            $errors = (string) stream_get_contents($pipes[$i][2]);
+            $errors[$i] = (string) stream_get_contents($pipes[$i][2]);
             fclose($pipes[$i][1]);
             fclose($pipes[$i][2]);
+            $codes[$i] = proc_close($processes[$i]);
 
-            self::assertSame(0, proc_close($process), sprintf('Process %d failed: %s', $i, $errors));
+            if ($i === 0) {
+                touch($stopFile);
+            }
         }
 
-        // the reader saw the file change while it was reading it
-        self::assertGreaterThan(1, (int) $outputs[0]);
+        foreach ($codes as $i => $code) {
+            self::assertSame(0, $code, sprintf('Process %d failed: %s', $i, $errors[$i]));
+        }
+        self::assertGreaterThan(1, (int) $outputs[0], 'The reader did not see the file change');
     }
 
     /**

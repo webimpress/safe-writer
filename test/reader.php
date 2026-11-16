@@ -3,16 +3,19 @@
 declare(strict_types=1);
 
 /** @var string[] $argv */
-[, $file, $duration] = $argv;
+[, $file, $minDuration, $maxDuration] = $argv;
 
-// wait until all processes are started
-echo 'ready', PHP_EOL;
-fgets(STDIN);
-
-$end = microtime(true) + (float) $duration;
+$start = microtime(true);
 
 $versions = [];
-while (microtime(true) < $end) {
+while (true) {
+    $elapsed = microtime(true) - $start;
+    if ($elapsed >= (float) $maxDuration
+        || ($elapsed >= (float) $minDuration && count($versions) > 1)
+    ) {
+        break;
+    }
+
     /** @psalm-suppress UnresolvableInclude */
     $data = include $file;
     if (! is_array($data) || ! isset($data['version'])) {

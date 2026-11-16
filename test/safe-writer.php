@@ -5,18 +5,19 @@ declare(strict_types=1);
 include __DIR__ . '/../vendor/autoload.php';
 
 /** @var string[] $argv */
-[, $file, $duration, $id] = $argv;
+[, $file, $stopFile, $maxDuration, $id] = $argv;
 
 $data = array_fill(0, 1000, str_repeat('x', 100));
 
-// wait until all processes are started
-echo 'ready', PHP_EOL;
-fgets(STDIN);
-
-$end = microtime(true) + (float) $duration;
+$end = microtime(true) + (float) $maxDuration;
 
 $writes = 0;
 while (microtime(true) < $end) {
+    clearstatcache();
+    if (file_exists($stopFile)) {
+        break;
+    }
+
     ++$writes;
 
     Webimpress\SafeWriter\FileWriter::writeFile(
