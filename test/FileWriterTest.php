@@ -20,10 +20,13 @@ use function fileinode;
 use function fileperms;
 use function fopen;
 use function glob;
+use function microtime;
 use function mkdir;
 use function octdec;
 use function proc_close;
+use function proc_get_status;
 use function proc_open;
+use function proc_terminate;
 use function restore_error_handler;
 use function rmdir;
 use function set_error_handler;
@@ -35,6 +38,7 @@ use function touch;
 use function umask;
 use function uniqid;
 use function unlink;
+use function usleep;
 
 use const PHP_BINARY;
 
@@ -109,43 +113,62 @@ class FileWriterTest extends TestCase
         $commands[0] = [__DIR__ . '/reader.php', $file, '1', '10'];
 
         $processes = [];
-        $pipes = [];
         foreach ($commands as $i => $command) {
-            $processPipes = [];
+            $pipes = [];
             $process = proc_open(
                 [PHP_BINARY, ...$command],
                 [
-                    0 => ['pipe', 'r'],
-                    1 => ['pipe', 'w'],
-                    2 => ['pipe', 'w'],
+                    1 => ['file', $this->dir . '/' . $i . '.out', 'w'],
+                    2 => ['file', $this->dir . '/' . $i . '.err', 'w'],
                 ],
-                $processPipes
+                $pipes
             );
             self::assertIsResource($process);
             $processes[$i] = $process;
-            $pipes[$i] = $processPipes;
         }
 
-        $outputs = [];
-        $errors = [];
-        $codes = [];
-        foreach ([0, 1, 2, 3] as $i) {
-            fclose($pipes[$i][0]);
-            $outputs[$i] = (string) stream_get_contents($pipes[$i][1]);
-            $errors[$i] = (string) stream_get_contents($pipes[$i][2]);
-            fclose($pipes[$i][1]);
-            fclose($pipes[$i][2]);
-            $codes[$i] = proc_close($processes[$i]);
-
-            if ($i === 0) {
-                touch($stopFile);
-            }
+        $deadline = microtime(true) + 30;
+        $codes = [0 => $this->waitForExit($processes[0], $deadline)];
+        touch($stopFile);
+        for ($i = 1; $i <= 3; ++$i) {
+            $codes[$i] = $this->waitForExit($processes[$i], $deadline);
         }
 
         foreach ($codes as $i => $code) {
-            self::assertSame(0, $code, sprintf('Process %d failed: %s', $i, $errors[$i]));
+            self::assertNotNull($code, sprintf('Process %d timed out', $i));
+            self::assertSame(
+                0,
+                $code,
+                sprintf('Process %d failed: %s', $i, (string) file_get_contents($this->dir . '/' . $i . '.err'))
+            );
         }
-        self::assertGreaterThan(1, (int) $outputs[0], 'The reader did not see the file change');
+        self::assertGreaterThan(
+            1,
+            (int) file_get_contents($this->dir . '/0.out'),
+            'The reader did not see the file change'
+        );
+    }
+
+    /**
+     * Returns the exit code, or null when the process is still running at the deadline and has been terminated.
+     *
+     * @param resource $process
+     */
+    private function waitForExit($process, float $deadline) : ?int
+    {
+        while (microtime(true) < $deadline) {
+            $status = proc_get_status($process);
+            if (! $status['running']) {
+                proc_close($process);
+                return $status['exitcode'];
+            }
+
+            usleep(10000);
+        }
+
+        proc_terminate($process);
+        proc_close($process);
+        return null;
     }
 
     /**
