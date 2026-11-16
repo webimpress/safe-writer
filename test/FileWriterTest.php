@@ -15,12 +15,15 @@ use function dirname;
 use function file_exists;
 use function file_get_contents;
 use function fileperms;
+use function glob;
 use function is_resource;
 use function json_encode;
+use function mkdir;
 use function octdec;
 use function proc_close;
 use function proc_open;
 use function restore_error_handler;
+use function rmdir;
 use function set_error_handler;
 use function sprintf;
 use function stream_get_contents;
@@ -35,6 +38,16 @@ use const PHP_EOL;
 
 class FileWriterTest extends TestCase
 {
+    private string $dir;
+
+    protected function setUp() : void
+    {
+        parent::setUp();
+
+        $this->dir = sys_get_temp_dir() . '/' . uniqid('safe-writer_', true);
+        mkdir($this->dir);
+    }
+
     public function testContentIsSavedToTheFile() : void
     {
         $targetFile = $this->getTargetFile();
@@ -76,7 +89,7 @@ class FileWriterTest extends TestCase
 
     private function getTargetFile() : string
     {
-        return sys_get_temp_dir() . '/' . uniqid('test_', true) . '.php';
+        return $this->dir . '/' . uniqid('test_', true) . '.php';
     }
 
     public function testMultipleWriters() : void
@@ -136,7 +149,7 @@ class FileWriterTest extends TestCase
 
     public function testUnwritableDirThrowsException() : void
     {
-        $dir = sys_get_temp_dir() . '/unwritable';
+        $dir = $this->dir . '/unwritable';
         touch($dir);
 
         $this->expectException(RuntimeException::class);
@@ -150,7 +163,7 @@ class FileWriterTest extends TestCase
         };
         set_error_handler($errorHandler);
 
-        $dir = sys_get_temp_dir() . '/unwritable';
+        $dir = $this->dir . '/unwritable';
         touch($dir);
 
         $this->expectException(RuntimeException::class);
@@ -179,9 +192,11 @@ class FileWriterTest extends TestCase
         if (file_exists(__DIR__ . '/test.php')) {
             unlink(__DIR__ . '/test.php');
         }
-        if (file_exists(sys_get_temp_dir() . '/unwritable')) {
-            unlink(sys_get_temp_dir() . '/unwritable');
+        $files = glob($this->dir . '/*');
+        foreach ($files === false ? [] : $files as $file) {
+            unlink($file);
         }
+        rmdir($this->dir);
 
         parent::tearDown();
     }
